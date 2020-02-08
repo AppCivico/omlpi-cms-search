@@ -2,13 +2,11 @@
 
 exports.shorthands = undefined;
 
-exports.up = pgm => {
+exports.up = (pgm) => {
   pgm.createExtension('unaccent', { ifNotExists: true });
 
   // Add the tsvector column
-  pgm.addColumn('artigos',
-    { tsv: { type: 'tsvector' } },
-    { ifNotExists: true });
+  pgm.addColumn('artigos', { tsv: { type: 'tsvector' } });
 
   // Create gin index on tsv column
   pgm.createIndex('artigos', 'tsv', {
@@ -48,10 +46,51 @@ exports.up = pgm => {
 
     end;`,
   );
+
+  // Create or update an article
+  pgm.createFunction(
+    'tf_artigos_tsv_update',
+    [],
+    {
+      returns: 'trigger',
+      language: 'plpgsql',
+      replace: true,
+    },
+    `
+      declare
+        tags_str varchar;
+      begin
+
+        select string_agg(unaccent(tags.name), ' ') into tags_str
+        from artigos_tags__tags_artigos
+        join tags
+          on artigos_tags__tags_artigos.tag_id = tags.id
+        where artigos_tags__tags_artigos.artigo_id = NEW.id;
+
+        NEW.tsv = setweight(to_tsvector('portuguese', unaccent(NEW.title)), 'A')
+               || setweight(to_tsvector('portuguese', CONCAT_WS(' ', NEW.author, NEW.organization)), 'B')
+               || setweight(to_tsvector('portuguese', COALESCE(tags_str, '')), 'C');
+
+        return NEW;
+      end;
+    `,
+  );
+
+  pgm.dropTrigger('artigos', 't_artigos_tsv', { ifExists: true });
+  pgm.createTrigger('artigos', 't_artigos_tsv', {
+    when: 'before',
+    operation: ['insert', 'update'],
+    level: 'row',
+    function: 'tf_artigos_tsv_update',
+  });
 };
 
-exports.down = pgm => {
+exports.down = (pgm) => {
   pgm.dropIndex('artigos', 'tsv', { name: 'artigos_tsv_idx' });
   pgm.dropColumn('artigos', 'tsv');
+
   pgm.dropFunction('f_artigos_tsv_update', [], { ifExists: true });
+
+  pgm.dropFunction('tf_artigos_tsv_update', [], { ifExists: true });
+  pgm.dropTrigger('artigos', 't_artigos_tsv', { ifExists: true });
 };
