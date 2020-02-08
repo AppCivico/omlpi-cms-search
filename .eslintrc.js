@@ -1,6 +1,6 @@
 module.exports = {
   env: {
-    browser: true,
+    browser: false,
     commonjs: true,
     es6: true,
   },
@@ -15,5 +15,6 @@ module.exports = {
     ecmaVersion: 2018,
   },
   rules: {
+    "no-console": "off"
   },
 };
