@@ -103,11 +103,22 @@ exports.up = (pgm) => {
     level: 'row',
     function: 'tf_artigos_tags__tags_artigos_tsv_update',
   });
+
+  // Remove an artigos_tags relation
+  pgm.dropTrigger('artigos_tags__tags_artigos', 't_artigos_tags__tags_artigos_delete_tsv', { ifExists: true });
+  pgm.createTrigger('artigos_tags__tags_artigos', 't_artigos_tags__tags_artigos_delete_tsv', {
+    when: 'after',
+    operation: ['delete'],
+    level: 'row',
+    function: 'tf_artigos_tags__tags_artigos_tsv_update',
+  });
+
 };
 
 exports.down = (pgm) => {
+  pgm.dropTrigger('artigos_tags__tags_artigos', 't_artigos_tags__tags_artigos_delete_tsv', { ifExists: true });
 
-  pgm.dropTrigger('artigos_tags__tags_artigos', 't_artigos_tags__tags_artigos_create_tsv', [], { ifExists: true });
+  pgm.dropTrigger('artigos_tags__tags_artigos', 't_artigos_tags__tags_artigos_create_tsv', { ifExists: true });
   pgm.dropFunction('tf_artigos_tags__tags_artigos_tsv_update', [], { ifExists: true });
 
   pgm.dropTrigger('artigos', 't_artigos_tsv', { ifExists: true });
