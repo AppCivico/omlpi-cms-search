@@ -24,7 +24,6 @@ server.get('/search', (req, res, next) => {
   // eslint-disable-next-line no-multi-assign
   cond = tsRank = tsQuery = '';
   let orderBy = 'ORDER BY artigos.created_at DESC';
-  let binds = [q];
   if (q) {
     const hasWhiteSpace = q.includes(' ');
     const plainToTsQuery = hasWhiteSpace
@@ -58,7 +57,7 @@ server.get('/search', (req, res, next) => {
     ${orderBy}
   `;
 
-  db.any(sqlQuery, binds)
+  db.any(sqlQuery, [q])
     .then((data) => {
       console.dir(data);
       res.send(data.map(({ rank, ...keepAttrs }) => keepAttrs));
