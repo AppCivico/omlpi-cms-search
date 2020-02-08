@@ -2,15 +2,11 @@ version: "3"
 services:
   app:
     build: .
-    depends_on:
-      - postgres
     environment:
-      DATABASE_URL: postgres://user:pass@postgres:5432/db
-      NODE_ENV: development
-      PORT: 3000
+      DATABASE_URL: postgres://postgres:trustme@172.17.0.1:5432/omlpi_dev
     ports:
-      - "3000:3000"
-    #command: npm start
+      - "3000:1225"
+    command: npm start
     volumes:
-      - .:/app/
-      - /app/node_modules
+      - .:/home/node/app
+      - /home/node/app/node_modules
