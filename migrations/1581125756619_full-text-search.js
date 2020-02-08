@@ -83,14 +83,38 @@ exports.up = (pgm) => {
     level: 'row',
     function: 'tf_artigos_tsv_update',
   });
+
+  // Create an artigos_tags relation
+  pgm.createFunction(
+    'tf_artigos_tags__tags_artigos_tsv_update', [],
+    {
+      returns: 'trigger',
+      language: 'plpgsql',
+      replace: true,
+    },
+    'begin '
+      + 'perform f_artigos_tsv_update(COALESCE(OLD.artigo_id, NEW.artigo_id)); '
+      + 'end',
+  );
+  pgm.dropTrigger('artigos_tags__tags_artigos', 't_artigos_tags__tags_artigos_create_tsv', { ifExists: true });
+  pgm.createTrigger('artigos_tags__tags_artigos', 't_artigos_tags__tags_artigos_create_tsv', {
+    when: 'after',
+    operation: ['insert', 'update'],
+    level: 'row',
+    function: 'tf_artigos_tags__tags_artigos_tsv_update',
+  });
 };
 
 exports.down = (pgm) => {
-  pgm.dropIndex('artigos', 'tsv', { name: 'artigos_tsv_idx' });
-  pgm.dropColumn('artigos', 'tsv');
 
-  pgm.dropFunction('f_artigos_tsv_update', [], { ifExists: true });
+  pgm.dropTrigger('artigos_tags__tags_artigos', 't_artigos_tags__tags_artigos_create_tsv', [], { ifExists: true });
+  pgm.dropFunction('tf_artigos_tags__tags_artigos_tsv_update', [], { ifExists: true });
+
+  pgm.dropTrigger('artigos', 't_artigos_tsv', { ifExists: true });
 
   pgm.dropFunction('tf_artigos_tsv_update', [], { ifExists: true });
-  pgm.dropTrigger('artigos', 't_artigos_tsv', { ifExists: true });
+  pgm.dropFunction('f_artigos_tsv_update', [], { ifExists: true });
+
+  pgm.dropIndex('artigos', 'tsv', { name: 'artigos_tsv_idx' });
+  pgm.dropColumn('artigos', 'tsv');
 };
