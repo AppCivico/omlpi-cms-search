@@ -1,4 +1,5 @@
 const restify = require('restify');
+const errors = require('restify-errors');
 const pgp = require('pg-promise')();
 
 /**
@@ -64,7 +65,8 @@ server.get('/search', (req, res, next) => {
       next();
     })
     .catch((err) => {
-      console.log('Error: %s', err);
+      console.log(err);
+      return next(new errors.InternalServerError('Internal server error'));
     });
 });
 
