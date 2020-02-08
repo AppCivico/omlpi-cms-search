@@ -8,8 +8,8 @@ const server = restify.createServer();
 /**
   * Middleware
   */
-server.use(restify.plugins.jsonp());
-server.use(restify.plugins.queryParser());
+// server.use(restify.plugins.jsonp());
+// server.use(restify.plugins.queryParser());
 
 /**
   * Routes
@@ -19,7 +19,7 @@ server.get('/search', (_req, res, next) => {
   next();
 });
 
-const port = 1337;
+const port = 1225;
 server.listen(port, () => {
   console.log('Listening on port %d', port);
 });
