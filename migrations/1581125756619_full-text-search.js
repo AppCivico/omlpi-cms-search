@@ -94,6 +94,7 @@ exports.up = (pgm) => {
     },
     'begin '
       + 'perform f_artigos_tsv_update(COALESCE(OLD.artigo_id, NEW.artigo_id)); '
+      + 'return NEW; '
       + 'end',
   );
   pgm.dropTrigger('artigos_tags__tags_artigos', 't_artigos_tags__tags_artigos_create_tsv', { ifExists: true });
@@ -113,9 +114,61 @@ exports.up = (pgm) => {
     function: 'tf_artigos_tags__tags_artigos_tsv_update',
   });
 
+  // Update a tag
+  pgm.createFunction('tf_tags_tsv_update', [],
+    {
+      returns: 'trigger',
+      language: 'plpgsql',
+      replace: true,
+    },
+    `begin
+      perform f_artigos_tsv_update(artigo_id)
+      from artigos_tags__tags_artigos
+      where tag_id = NEW.id;
+
+      return NEW;
+    end;`);
+  pgm.dropTrigger('tags', 't_tags_tsv_update', { ifExists: true });
+  pgm.createTrigger('tags', 't_tags_tsv_update', {
+    when: 'after',
+    operation: ['update'],
+    level: 'row',
+    function: 'tf_tags_tsv_update',
+  });
+
+  // Delete tag
+  pgm.createFunction('tf_tags_tsv_delete', [],
+    {
+      returns: 'trigger',
+      language: 'plpgsql',
+      replace: true,
+    },
+    `begin
+      perform f_artigos_tsv_update(artigo_id)
+      from artigos_tags__tags_artigos
+      where tag_id = OLD.id;
+
+      return NEW;
+    end;`);
+  pgm.dropTrigger('tags', 't_tags_tsv_delete', { ifExists: true });
+  pgm.createTrigger('tags', 't_tags_tsv_delete', {
+    when: 'after',
+    operation: 'delete',
+    level: 'row',
+    function: 'tf_tags_tsv_delete',
+  });
+
+  // Fake update just to generate tsvector for existent data
+  pgm.sql('update artigos set id = id');
 };
 
 exports.down = (pgm) => {
+  pgm.dropTrigger('tags', 't_tags_tsv_delete', { ifExists: true });
+  pgm.dropFunction('tf_tags_tsv_delete', [], { ifExists: true });
+
+  pgm.dropTrigger('tags', 't_tags_tsv_update', { ifExists: true });
+  pgm.dropFunction('tf_tags_tsv_update', [], { ifExists: true });
+
   pgm.dropTrigger('artigos_tags__tags_artigos', 't_artigos_tags__tags_artigos_delete_tsv', { ifExists: true });
 
   pgm.dropTrigger('artigos_tags__tags_artigos', 't_artigos_tags__tags_artigos_create_tsv', { ifExists: true });
