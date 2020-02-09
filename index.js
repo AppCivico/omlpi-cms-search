@@ -60,7 +60,6 @@ server.get('/search', (req, res, next) => {
 
   db.any(sqlQuery, [q])
     .then((data) => {
-      console.dir(data);
       res.send(data.map(({ rank, ...keepAttrs }) => keepAttrs));
       next();
     })
@@ -70,7 +69,7 @@ server.get('/search', (req, res, next) => {
     });
 });
 
-const port = 1225;
+const port = 1337;
 server.listen(port, () => {
   console.log('Listening on port %d', port);
 });

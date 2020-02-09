@@ -7,5 +7,7 @@ RUN npm install
 
 COPY . .
 
-EXPOSE 1225
-CMD ["npm", "start"]
+EXPOSE 1337
+
+COPY docker-entrypoint.sh /usr/local/bin/
+ENTRYPOINT ["docker-entrypoint.sh"]
