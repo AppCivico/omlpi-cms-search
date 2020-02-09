@@ -16,11 +16,9 @@ server.use(restify.plugins.queryParser());
 server.pre(restify.plugins.pre.dedupeSlashes());
 
 /**
-  * Routes
+  * Services
   */
-server.get('/search', (req, res, next) => {
-  const { q } = req.query;
-
+const searchArtigos = (q) => {
   let { cond, tsRank, tsQuery } = {};
   // eslint-disable-next-line no-multi-assign
   cond = tsRank = tsQuery = '';
@@ -58,7 +56,16 @@ server.get('/search', (req, res, next) => {
     ${orderBy}
   `;
 
-  db.any(sqlQuery, [q])
+  return db.any(sqlQuery, [q]);
+};
+
+/**
+  * Routes
+  */
+server.get('/search', (req, res, next) => {
+  const { q } = req.query;
+
+  searchArtigos(q)
     .then((data) => {
       res.send(data.map(({ rank, ...keepAttrs }) => keepAttrs));
       next();
