@@ -1,3 +1,3 @@
 #!/bin/bash
-npx node-pg-migrate up
+npm run migrate up
 npm start

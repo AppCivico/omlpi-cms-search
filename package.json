@@ -4,11 +4,11 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "start": "node index.js",
-    "dev": "nodemon index.js",
+    "start": "node ./src/index.js",
+    "dev": "nodemon ./src/index.js",
     "test": "echo \"Error: no test specified\" && exit 1",
-    "lint": "npx eslint . --ext .js",
-    "migrate": "node-pg-migrate"
+    "lint": "eslint . --ext .js",
+    "migrate": "node-pg-migrate -m ./src/migrations"
   },
   "author": "",
   "license": "ISC",
