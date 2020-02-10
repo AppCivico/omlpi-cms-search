@@ -45,15 +45,18 @@ const searchArtigos = (q) => {
       artigos.organization,
       artigos.created_at,
       artigos.updated_at,
-      (
-        SELECT JSON_AGG(tags_agg.*)
-        FROM (
-          SELECT tags.id, tags.name, tags.created_at, tags.updated_at
-          FROM artigos__tags
-          JOIN tags
-            ON artigos__tags.tag_id = tags.id
-          WHERE artigos__tags.artigo_id = artigos.id
-        ) tags_agg
+      COALESCE(
+        (
+          SELECT JSON_AGG(tags_agg.*)
+          FROM (
+            SELECT tags.id, tags.name, tags.created_at, tags.updated_at
+            FROM artigos__tags
+            JOIN tags
+              ON artigos__tags.tag_id = tags.id
+            WHERE artigos__tags.artigo_id = artigos.id
+          ) tags_agg
+        ),
+        '[]'
       ) AS tags
     ${tsRank}
     FROM artigos
