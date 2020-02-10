@@ -19,10 +19,11 @@ server.pre(restify.plugins.pre.dedupeSlashes());
   * Services
   */
 const searchArtigos = (q) => {
-  let { cond, tsRank, tsQuery } = {};
-  // eslint-disable-next-line no-multi-assign
-  cond = tsRank = tsQuery = '';
+  let cond = '';
+  let tsRank = '';
+  let tsQuery = '';
   let orderBy = 'ORDER BY artigos.created_at DESC';
+
   if (q) {
     const hasWhiteSpace = q.includes(' ');
     const plainToTsQuery = hasWhiteSpace
