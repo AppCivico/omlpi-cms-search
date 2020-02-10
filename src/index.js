@@ -1,6 +1,7 @@
 const restify = require('restify');
 const errors = require('restify-errors');
 const pgp = require('pg-promise')();
+const logger = require('morgan');
 
 /**
   * Initialize server
@@ -9,9 +10,10 @@ const server = restify.createServer();
 const db = pgp(process.env.DATABASE_URL);
 
 /**
-  * Middleware
+  * Middlewares
   */
 // server.use(restify.plugins.jsonp());
+server.use(logger('dev'));
 server.use(restify.plugins.queryParser());
 server.pre(restify.plugins.pre.dedupeSlashes());
 
@@ -64,9 +66,6 @@ const searchArtigos = (q) => {
     ${cond}
     ${orderBy}
   `;
-
-  console.log(sqlQuery);
-  console.dir([q]);
 
   return db.any(sqlQuery, [q]);
 };
