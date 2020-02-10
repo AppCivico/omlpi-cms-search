@@ -74,7 +74,7 @@ const searchArtigos = (q) => {
 /**
   * Routes
   */
-server.get('/search', (req, res, next) => {
+server.get('/artigos', (req, res, next) => {
   const { q } = req.query;
 
   searchArtigos(q)
