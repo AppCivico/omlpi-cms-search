@@ -33,10 +33,10 @@ exports.up = (pgm) => {
     begin
 
       select string_agg(unaccent(tags.name), ' ') into tags_str
-      from artigos_tags__tags_artigos
+      from artigos__tags
       join tags
-        on artigos_tags__tags_artigos.tag_id = tags.id
-      where artigos_tags__tags_artigos.artigo_id = _artigo_id;
+        on artigos__tags.tag_id = tags.id
+      where artigos__tags.artigo_id = _artigo_id;
 
       update artigos
         set tsv = setweight(to_tsvector('portuguese', unaccent(title)), 'A')
@@ -62,10 +62,10 @@ exports.up = (pgm) => {
       begin
 
         select string_agg(unaccent(tags.name), ' ') into tags_str
-        from artigos_tags__tags_artigos
+        from artigos__tags
         join tags
-          on artigos_tags__tags_artigos.tag_id = tags.id
-        where artigos_tags__tags_artigos.artigo_id = NEW.id;
+          on artigos__tags.tag_id = tags.id
+        where artigos__tags.artigo_id = NEW.id;
 
         NEW.tsv = setweight(to_tsvector('portuguese', unaccent(NEW.title)), 'A')
                || setweight(to_tsvector('portuguese', CONCAT_WS(' ', NEW.author, NEW.organization)), 'B')
@@ -86,7 +86,7 @@ exports.up = (pgm) => {
 
   // Create an artigos_tags relation
   pgm.createFunction(
-    'tf_artigos_tags__tags_artigos_tsv_update', [],
+    'tf_artigos__tags_tsv_update', [],
     {
       returns: 'trigger',
       language: 'plpgsql',
@@ -97,21 +97,21 @@ exports.up = (pgm) => {
       + 'return NEW; '
       + 'end',
   );
-  pgm.dropTrigger('artigos_tags__tags_artigos', 't_artigos_tags__tags_artigos_create_tsv', { ifExists: true });
-  pgm.createTrigger('artigos_tags__tags_artigos', 't_artigos_tags__tags_artigos_create_tsv', {
+  pgm.dropTrigger('artigos__tags', 't_artigos__tags_create_tsv', { ifExists: true });
+  pgm.createTrigger('artigos__tags', 't_artigos__tags_create_tsv', {
     when: 'after',
     operation: ['insert', 'update'],
     level: 'row',
-    function: 'tf_artigos_tags__tags_artigos_tsv_update',
+    function: 'tf_artigos__tags_tsv_update',
   });
 
   // Remove an artigos_tags relation
-  pgm.dropTrigger('artigos_tags__tags_artigos', 't_artigos_tags__tags_artigos_delete_tsv', { ifExists: true });
-  pgm.createTrigger('artigos_tags__tags_artigos', 't_artigos_tags__tags_artigos_delete_tsv', {
+  pgm.dropTrigger('artigos__tags', 't_artigos__tags_delete_tsv', { ifExists: true });
+  pgm.createTrigger('artigos__tags', 't_artigos__tags_delete_tsv', {
     when: 'after',
     operation: ['delete'],
     level: 'row',
-    function: 'tf_artigos_tags__tags_artigos_tsv_update',
+    function: 'tf_artigos__tags_tsv_update',
   });
 
   // Update a tag
@@ -123,7 +123,7 @@ exports.up = (pgm) => {
     },
     `begin
       perform f_artigos_tsv_update(artigo_id)
-      from artigos_tags__tags_artigos
+      from artigos__tags
       where tag_id = NEW.id;
 
       return NEW;
@@ -145,7 +145,7 @@ exports.up = (pgm) => {
     },
     `begin
       perform f_artigos_tsv_update(artigo_id)
-      from artigos_tags__tags_artigos
+      from artigos__tags
       where tag_id = OLD.id;
 
       return NEW;
@@ -169,10 +169,10 @@ exports.down = (pgm) => {
   pgm.dropTrigger('tags', 't_tags_tsv_update', { ifExists: true });
   pgm.dropFunction('tf_tags_tsv_update', [], { ifExists: true });
 
-  pgm.dropTrigger('artigos_tags__tags_artigos', 't_artigos_tags__tags_artigos_delete_tsv', { ifExists: true });
+  pgm.dropTrigger('artigos__tags', 't_artigos__tags_delete_tsv', { ifExists: true });
 
-  pgm.dropTrigger('artigos_tags__tags_artigos', 't_artigos_tags__tags_artigos_create_tsv', { ifExists: true });
-  pgm.dropFunction('tf_artigos_tags__tags_artigos_tsv_update', [], { ifExists: true });
+  pgm.dropTrigger('artigos__tags', 't_artigos__tags_create_tsv', { ifExists: true });
+  pgm.dropFunction('tf_artigos__tags_tsv_update', [], { ifExists: true });
 
   pgm.dropTrigger('artigos', 't_artigos_tsv', { ifExists: true });
 
