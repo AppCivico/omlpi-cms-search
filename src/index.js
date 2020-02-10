@@ -45,17 +45,25 @@ const searchArtigos = (q) => {
       artigos.organization,
       artigos.created_at,
       artigos.updated_at,
-      ROW_TO_JSON(tags.*) AS tags
+      (
+        SELECT JSON_AGG(tags_agg.*)
+        FROM (
+          SELECT tags.id, tags.name, tags.created_at, tags.updated_at
+          FROM artigos__tags
+          JOIN tags
+            ON artigos__tags.tag_id = tags.id
+          WHERE artigos__tags.artigo_id = artigos.id
+        ) tags_agg
+      ) AS tags
     ${tsRank}
     FROM artigos
-    LEFT JOIN artigos_tags__tags_artigos
-      ON artigos_tags__tags_artigos.artigo_id = artigos.id
-    LEFT JOIN tags
-      ON artigos_tags__tags_artigos.tag_id = tags.id
     ${tsQuery}
     ${cond}
     ${orderBy}
   `;
+
+  console.log(sqlQuery);
+  console.dir([q]);
 
   return db.any(sqlQuery, [q]);
 };
