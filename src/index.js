@@ -68,34 +68,33 @@ const searchArtigos = async (q, args = {}) => {
     ${tsQuery}
     ${cond}
     ${orderBy}
-    LIMIT ${limit}
+    LIMIT ${limit} + 1
     OFFSET ${offset}
   `;
 
-  // return db.any(sqlQuery, [q]);
   const results = await db.any(sqlQuery, [q]);
-  console.dir(results);
+  const hasMore = Boolean(results[limit]);
 
-  return { results };
+  return { results: results.splice(0, limit), hasMore };
 };
 
 /**
   * Routes
   */
-server.get('/artigos', (req, res, next) => {
+server.get('/artigos', async (req, res, next) => {
   const { _q, _limit, _offset } = req.query;
 
-  searchArtigos(_q, { limit: _limit, offset: _offset })
-    .then((data) => {
-      data.results.map(({ rank, ...keepAttrs }) => keepAttrs);
-      res.send(data);
-      // res.send(results.map(({ rank, ...keepAttrs }) => keepAttrs));
-      next();
-    })
-    .catch((err) => {
-      console.log(err);
-      return next(new errors.InternalServerError('Internal server error'));
-    });
+  try {
+    const data = await searchArtigos(_q, { limit: _limit, offset: _offset });
+
+    data.results.map(({ rank, ...keepAttrs }) => keepAttrs);
+    res.send(data);
+    next();
+  }
+  catch (err) {
+    console.log(err);
+    return next(new errors.InternalServerError('Internal server error'));
+  }
 });
 
 const port = 1337;
