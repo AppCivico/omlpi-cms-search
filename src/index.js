@@ -20,7 +20,7 @@ server.pre(restify.plugins.pre.dedupeSlashes());
 /**
   * Services
   */
-const searchArtigos = (q) => {
+const searchArtigos = (q, args = {}) => {
   let cond = '';
   let tsRank = '';
   let tsQuery = '';
@@ -37,6 +37,9 @@ const searchArtigos = (q) => {
     cond = 'WHERE artigos.tsv @@ query';
     orderBy = 'ORDER BY rank DESC, created_at DESC';
   }
+
+  const limit = args.limit || 10;
+  const offset = args.offset || 0;
 
   const sqlQuery = `
      SELECT
@@ -65,7 +68,11 @@ const searchArtigos = (q) => {
     ${tsQuery}
     ${cond}
     ${orderBy}
+    LIMIT ${limit}
+    OFFSET ${offset}
   `;
+
+  console.log(sqlQuery);
 
   return db.any(sqlQuery, [q]);
 };
@@ -74,9 +81,9 @@ const searchArtigos = (q) => {
   * Routes
   */
 server.get('/artigos', (req, res, next) => {
-  const { q } = req.query;
+  const { _q, _limit, _offset } = req.query;
 
-  searchArtigos(q)
+  searchArtigos(_q, { limit: _limit, offset: _offset })
     .then((data) => {
       res.send(data.map(({ rank, ...keepAttrs }) => keepAttrs));
       next();
