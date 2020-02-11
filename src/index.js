@@ -20,7 +20,7 @@ server.pre(restify.plugins.pre.dedupeSlashes());
 /**
   * Services
   */
-const searchArtigos = (q, args = {}) => {
+const searchArtigos = async (q, args = {}) => {
   let cond = '';
   let tsRank = '';
   let tsQuery = '';
@@ -72,9 +72,11 @@ const searchArtigos = (q, args = {}) => {
     OFFSET ${offset}
   `;
 
-  console.log(sqlQuery);
+  // return db.any(sqlQuery, [q]);
+  const results = await db.any(sqlQuery, [q]);
+  console.dir(results);
 
-  return db.any(sqlQuery, [q]);
+  return { results };
 };
 
 /**
@@ -85,7 +87,9 @@ server.get('/artigos', (req, res, next) => {
 
   searchArtigos(_q, { limit: _limit, offset: _offset })
     .then((data) => {
-      res.send(data.map(({ rank, ...keepAttrs }) => keepAttrs));
+      data.results.map(({ rank, ...keepAttrs }) => keepAttrs);
+      res.send(data);
+      // res.send(results.map(({ rank, ...keepAttrs }) => keepAttrs));
       next();
     })
     .catch((err) => {
