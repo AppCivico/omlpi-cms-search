@@ -21,25 +21,25 @@ server.pre(restify.plugins.pre.dedupeSlashes());
   * Services
   */
 const searchArtigos = async (q, args = {}) => {
-  let cond = '';
   let tsRank = '';
   let tsQuery = '';
+  let whereCond = '';
   let orderBy = 'ORDER BY artigos.created_at DESC';
 
   if (q) {
     const hasWhiteSpace = q.includes(' ');
-    const plainToTsQuery = hasWhiteSpace
-      ? 'plainto_tsquery(\'portuguese\', unaccent($1))'
-      : '(plainto_tsquery(\'portuguese\', unaccent($1))::tsquery::text || \':*\')::tsquery';
 
-    tsRank = ', ts_rank(tsv, query) as rank';
-    tsQuery = `CROSS JOIN ( SELECT ${plainToTsQuery} AS query ) tsquery`;
-    cond = 'WHERE artigos.tsv @@ query';
+    tsQuery = hasWhiteSpace
+      ? 'CROSS JOIN ( SELECT plainto_tsquery(\'portuguese\', unaccent($<q>)) AS query ) tsquery'
+      : 'CROSS JOIN ( SELECT (plainto_tsquery(\'portuguese\', unaccent($<q>))::tsquery::text || \':*\')::tsquery AS query ) tsquery';
+
+    tsRank = 'TS_RANK(tsv, query) AS rank,';
+    whereCond = 'WHERE artigos.tsv @@ query';
     orderBy = 'ORDER BY rank DESC, created_at DESC';
   }
 
-  const limit = args.limit || 10;
-  const offset = args.offset || 0;
+  const limit = parseInt(args.limit, 10) || 10;
+  const offset = parseInt(args.offset, 10) || 0;
 
   const sqlQuery = `
      SELECT
@@ -48,8 +48,6 @@ const searchArtigos = async (q, args = {}) => {
       artigos.description,
       artigos.author,
       artigos.organization,
-      artigos.created_at,
-      artigos.updated_at,
       COALESCE(
         (
           SELECT JSON_AGG(tags_agg.*)
@@ -62,24 +60,35 @@ const searchArtigos = async (q, args = {}) => {
           ) tags_agg
         ),
         '[]'
-      ) AS tags
-    ${tsRank}
+      ) AS tags,
+      $<tsRank:raw>
+      artigos.created_at,
+      artigos.updated_at
     FROM artigos
     ${tsQuery}
-    ${cond}
-    ${orderBy}
-    LIMIT ${limit} + 1
-    OFFSET ${offset}
+    $<whereCond:raw>
+    $<orderBy:raw>
+    LIMIT $<limit> + 1
+    OFFSET $<offset>
   `;
 
   // Retrieve results
-  const results = await db.any(sqlQuery, [q]);
+  const results = await db.any(sqlQuery, {
+    q,
+    orderBy,
+    whereCond,
+    limit,
+    offset,
+    tsRank,
+  });
 
   // Pagination flag
   const hasMore = Boolean(results[limit]);
 
   return {
     hasMore,
+    limit,
+    offset,
     results: results
       .splice(0, limit)
       .map(({ rank, ...keepAttrs }) => keepAttrs),
@@ -95,9 +104,8 @@ server.get('/artigos', async (req, res, next) => {
   try {
     const data = await searchArtigos(_q, { limit: _limit, offset: _offset });
     res.send(data);
-    next();
-  }
-  catch (err) {
+    return next();
+  } catch (err) {
     console.log(err);
     return next(new errors.InternalServerError('Internal server error'));
   }
