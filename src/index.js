@@ -72,10 +72,18 @@ const searchArtigos = async (q, args = {}) => {
     OFFSET ${offset}
   `;
 
+  // Retrieve results
   const results = await db.any(sqlQuery, [q]);
+
+  // Pagination flag
   const hasMore = Boolean(results[limit]);
 
-  return { results: results.splice(0, limit), hasMore };
+  return {
+    hasMore,
+    results: results
+      .splice(0, limit)
+      .map(({ rank, ...keepAttrs }) => keepAttrs),
+  };
 };
 
 /**
@@ -86,8 +94,6 @@ server.get('/artigos', async (req, res, next) => {
 
   try {
     const data = await searchArtigos(_q, { limit: _limit, offset: _offset });
-
-    data.results.map(({ rank, ...keepAttrs }) => keepAttrs);
     res.send(data);
     next();
   }
