@@ -63,7 +63,31 @@ const searchArtigos = async (q, args = {}) => {
       ) AS tags,
       $<tsRank:raw>
       artigos.created_at,
-      artigos.updated_at
+      artigos.updated_at,
+      (
+        SELECT ROW_TO_JSON(upload_file.*)
+        FROM (
+          SELECT upload_file.*
+          FROM upload_file
+          JOIN upload_file_morph
+            ON upload_file.id = upload_file_morph.upload_file_id
+              AND upload_file_morph.related_type = 'artigos'
+              AND upload_file_morph.field = 'file'
+              AND upload_file_morph.related_id   = artigos.id
+        ) upload_file
+      ) AS file,
+      (
+        SELECT ROW_TO_JSON(upload_image.*)
+        FROM (
+          SELECT upload_file.*
+          FROM upload_file
+          JOIN upload_file_morph
+            ON upload_file.id = upload_file_morph.upload_file_id
+              AND upload_file_morph.related_type = 'artigos'
+              AND upload_file_morph.field = 'image'
+              AND upload_file_morph.related_id   = artigos.id
+        ) upload_image
+      ) AS image
     FROM artigos
     ${tsQuery}
     $<whereCond:raw>
