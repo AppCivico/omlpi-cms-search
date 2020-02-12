@@ -2,6 +2,7 @@ version: "3"
 services:
   app:
     build: .
+    restart: unless-stopped
     environment:
       DATABASE_URL: postgres://postgres:trustme@172.17.0.1:5432/omlpi_dev
     ports:
