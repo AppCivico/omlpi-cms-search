@@ -45,6 +45,7 @@ const searchArtigos = async (q, args = {}) => {
      SELECT
       artigos.id,
       artigos.title,
+      artigos.date,
       artigos.description,
       artigos.author,
       artigos.organization,
