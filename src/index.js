@@ -31,7 +31,14 @@ const searchArtigos = async (q, args = {}) => {
 
     tsQuery = hasWhiteSpace
       ? 'CROSS JOIN ( SELECT plainto_tsquery(\'portuguese\', unaccent($<q>)) AS query ) tsquery'
-      : 'CROSS JOIN ( SELECT (plainto_tsquery(\'simple\', unaccent($<q>))::tsquery::text || \':*\')::tsquery AS query ) tsquery';
+      : `CROSS JOIN (
+          SELECT (
+            CASE WHEN (plainto_tsquery('portuguese', unaccent($<$q>))::tsquery::text <> '') IS TRUE
+              THEN plainto_tsquery('portuguese', unaccent($<q>))::tsquery::text || ':*'
+              ELSE ''::text
+            END
+          )::tsquery AS query
+        ) tsquery`;
 
     tsRank = 'TS_RANK(tsv, query) AS rank,';
     whereCond = 'WHERE artigos.tsv @@ query';
@@ -96,17 +103,6 @@ const searchArtigos = async (q, args = {}) => {
     LIMIT $<limit> + 1
     OFFSET $<offset>
   `;
-
-
-  console.log(sqlQuery);
-  console.dir({
-    q,
-    orderBy,
-    whereCond,
-    limit,
-    offset,
-    tsRank,
-  });
 
   // Retrieve results
   const results = await db.any(sqlQuery, {
