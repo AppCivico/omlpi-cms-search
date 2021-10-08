@@ -57,7 +57,6 @@ const searchArtigos = async (q, args = {}) => {
       artigos.author,
       artigos.organization,
       artigos.youtube,
-      artigos.youtube_url,
       COALESCE(
         (
           SELECT JSON_AGG(tags_agg.*)
