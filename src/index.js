@@ -142,7 +142,8 @@ const searchArtigos = async (q, args = {}) => {
   * Routes
   */
 server.get('/artigos', async (req, res, next) => {
-  const { _q, _limit, _offset } = req.query;
+  let { _q, _limit, _offset, _start } = req.query;
+  if (_start) _offset = _start;
 
   try {
     const data = await searchArtigos(_q, { limit: _limit, offset: _offset });
