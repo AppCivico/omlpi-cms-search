@@ -64,17 +64,18 @@ const searchArtigos = async (q, args = {}) => {
 SELECT 1
 FROM artigos__tags
 WHERE artigos__tags.artigo_id = artigos.id
-AND artigos__tags.tag_id = ${x})`
+AND artigos__tags.tag_id = ${x}
+)`
           )
           .join(' AND ');
 
       } else {
-        whereCond += ` EXISTS(
+        whereCond += ` EXISTS (
 SELECT 1
 FROM artigos__tags
 WHERE artigos__tags.artigo_id = artigos.id
 AND artigos__tags.tag_id IN (${filteredTags.join(',')})
-        `;
+)`;
       }
     }
   }
