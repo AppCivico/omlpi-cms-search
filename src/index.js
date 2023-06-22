@@ -173,7 +173,7 @@ AND artigos__tags.tag_id IN (${filteredTags.join(',')})
   * Routes
   */
 server.get('/artigos', async (req, res, next) => {
-  let { _q, _limit, _offset, _start, _where: { tags = [] } } = req.query;
+  let { _q, _limit, _offset, _start, _where: { tags = [] } = {} } = req.query;
   if (_start) _offset = _start;
 
   if (!Array.isArray(tags)) {
