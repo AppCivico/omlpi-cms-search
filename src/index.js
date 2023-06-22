@@ -48,6 +48,37 @@ const searchArtigos = async (q, args = {}) => {
   const limit = parseInt(args.limit, 10) || 10;
   const offset = parseInt(args.offset, 10) || 0;
 
+  const tagsFilterType = 'exclusive';
+
+  if (args.tags) {
+    const filteredTags = args.tags
+      .map(x => Number.parseFloat(x))
+      .filter(x => !Number.isNaN(x) && Number.isInteger(x));
+
+    if (filteredTags.length) {
+      whereCond += q ? ' AND ' : ' WHERE ';
+
+      if(tagsFilterType === 'exclusive') {
+        whereCond += filteredTags
+          .map((x) => `EXISTS (
+SELECT 1
+FROM artigos__tags
+WHERE artigos__tags.artigo_id = artigos.id
+AND artigos__tags.tag_id = ${x})`
+          )
+          .join(' AND ');
+
+      } else {
+        whereCond += ` EXISTS(
+SELECT 1
+FROM artigos__tags
+WHERE artigos__tags.artigo_id = artigos.id
+AND artigos__tags.tag_id IN (${filteredTags.join(',')})
+        `;
+      }
+    }
+  }
+
   const sqlQuery = `
      SELECT
       artigos.id,
@@ -142,11 +173,15 @@ const searchArtigos = async (q, args = {}) => {
   * Routes
   */
 server.get('/artigos', async (req, res, next) => {
-  let { _q, _limit, _offset, _start } = req.query;
+  let { _q, _limit, _offset, _start, _where: { tags = [] } } = req.query;
   if (_start) _offset = _start;
 
+  if (!Array.isArray(tags)) {
+    tags = [tags];
+  }
+
   try {
-    const data = await searchArtigos(_q, { limit: _limit, offset: _offset });
+    const data = await searchArtigos(_q, { limit: _limit, offset: _offset, tags });
     res.send(data);
     return next();
   } catch (err) {
