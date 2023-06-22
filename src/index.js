@@ -48,7 +48,7 @@ const searchArtigos = async (q, args = {}) => {
   const limit = parseInt(args.limit, 10) || 10;
   const offset = parseInt(args.offset, 10) || 0;
 
-  const tagsFilterType = 'exclusive';
+  const tagsFilterType = 'inclusive';
 
   if (args.tags) {
     const filteredTags = args.tags
