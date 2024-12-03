@@ -1,4 +1,3 @@
-#!/bin/bash
-npm install
+#!/bin/sh
 npm run migrate up
 npm start
